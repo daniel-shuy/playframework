@@ -1,7 +1,5 @@
 package play.api.libs.concurrent
 
-import java.lang.reflect.Method
-
 import akka.actor._
 import com.google.inject._
 import com.google.inject.assistedinject.FactoryModuleBuilder
@@ -33,14 +31,6 @@ trait AkkaGuiceSupport {
   import com.google.inject.name.Names
   import com.google.inject.util.Providers
 
-  private def accessBinder: Binder = {
-    val method: Method = classOf[AbstractModule].getDeclaredMethod("binder")
-    if (!method.isAccessible) {
-      method.setAccessible(true)
-    }
-    method.invoke(this).asInstanceOf[Binder]
-  }
-
   /**
    * Bind an actor.
    *
@@ -55,7 +45,7 @@ trait AkkaGuiceSupport {
    * @tparam T The class that implements the actor.
    */
   def bindActor[T <: Actor: ClassTag](name: String, props: Props => Props = identity): Unit = {
-    accessBinder.bind(classOf[ActorRef])
+    binder.bind(classOf[ActorRef])
       .annotatedWith(Names.named(name))
       .toProvider(Providers.guicify(Akka.providerOf[T](name, props)))
       .asEagerSingleton()
@@ -111,7 +101,7 @@ trait AkkaGuiceSupport {
    * @tparam FactoryClass The class of the actor factory
    */
   def bindActorFactory[ActorClass <: Actor: ClassTag, FactoryClass: ClassTag]: Unit = {
-    accessBinder.install(new FactoryModuleBuilder()
+    binder.install(new FactoryModuleBuilder()
       .implement(classOf[Actor], implicitly[ClassTag[ActorClass]].runtimeClass.asInstanceOf[Class[_ <: Actor]])
       .build(implicitly[ClassTag[FactoryClass]].runtimeClass))
   }
